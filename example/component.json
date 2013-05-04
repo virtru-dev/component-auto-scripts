@@ -1,0 +1,7 @@
+{
+  "hello": "test",
+  "scripts": [
+    "index.js"
+  ],
+  "testScripts": []
+}

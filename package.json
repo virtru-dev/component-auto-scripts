@@ -1,0 +1,23 @@
+{
+  "name": "component-auto-scripts",
+  "description": "Find scripts for component.json",
+  "version": "0.0.1",
+  "dependencies": {
+    "commander": "*",
+    "component": "*",
+    "glob": "*",
+    "underscore": "*"
+  },
+  "keywords": [
+    "component",
+    "component.json"
+  ],
+  "author": "Reuven V. Gonzales <reuven@virtru.com>",
+  "preferGlobal": true,
+  "bin": {
+    "component-auto-scripts": "./bin/component-auto-scripts"
+  },
+  "engines": {
+    "node": ">= 0.8.22"
+  }
+}
