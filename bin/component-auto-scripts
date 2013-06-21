@@ -1,0 +1,87 @@
+#!/usr/bin/env node
+var program = require('commander'),
+    _ = require('underscore'),
+    glob = require('glob'),
+    fs = require('fs');
+
+program
+  .version('0.0.1')
+  .usage('[command] <comma-separated-list-of-scripts>')
+  .option('-t, --test-scripts [testScripts]', 'Specify testScripts', list, [])
+  .parse(process.argv);
+
+// Collect all matching scripts
+function collectAllMatchingScripts(matches, scriptPatterns, next) {
+  var currentScriptPattern = scriptPatterns.shift();
+  // If none
+  if(!currentScriptPattern) {
+    // Then complete the callback
+    return next(null, matches);
+  }
+  glob(currentScriptPattern, {}, function(err, files) {
+    if(err) {
+      return next(err);
+    }
+    var updatedMatches = _.union(matches, files);
+    // Recurse until complete
+    collectAllMatchingScripts(updatedMatches, scriptPatterns, next);
+  });
+}
+
+// Write out the component.json file
+function writeComponentJSON(componentObj) {
+  // Pretty print the JSON and add a new line at the end for good measure
+  var componentString = JSON.stringify(componentObj, null, 2) + '\n';
+  fs.writeFileSync('component.json', componentString);
+}
+
+function list(val) {
+  return val.split(',');
+}
+
+// Collect all the patterns for the scripts
+var rawScriptsArgs = program.args[0];
+if(rawScriptsArgs === undefined) {
+  console.log('Scripts argument required!');
+  program.help();
+  process.exit(1);
+}
+var scriptsPatterns = list(rawScriptsArgs);
+
+// Collect all the patterns for the testScripts
+var testScriptsPatterns = program.testScripts;
+
+// Read the component.json
+try {
+  var componentOrig = fs.readFileSync('component.json');
+} catch(e) {
+  if(e.code == 'ENOENT') {
+    console.log('No component.json was found. Exiting.');
+    process.exit(1);
+  }
+}
+
+var componentObj = JSON.parse(componentOrig);
+
+// Get all matching normal scripts
+collectAllMatchingScripts(
+  [], 
+  scriptsPatterns, 
+  function(err, scriptMatches) {
+    // Get all matching test scripts
+    if(err) {
+      throw err;
+    }
+    collectAllMatchingScripts(
+      [], 
+      testScriptsPatterns,
+      function(err, testScriptMatches) {
+        componentObj.scripts = scriptMatches;
+        componentObj.testScripts = testScriptMatches;
+        writeComponentJSON(componentObj);
+        // All done
+        process.exit(0);
+      }
+    );
+  }
+);
